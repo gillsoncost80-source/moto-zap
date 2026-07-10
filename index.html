@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoltaJunto v1.4</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#0a0a0a;color:#fff}
+#mapa{width:100%;height:50vh}
+.controles{padding:20px}
+h1{font-size:20px;text-align:center;margin-bottom:10px}
+#status{background:#1a1a1a;padding:15px;border-radius:12px;margin:10px 0;font-size:14px;text-align:center}
+#status.ok{border:2px solid #22c55e}
+#status.erro{border:2px solid #ef4444}
+.coords{font-size:12px;color:#0f0;font-family:monospace;margin-top:5px}
+button{width:100%;padding:18px;margin:6px 0;font-size:16px;border:none;border-radius:12px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:0.4;cursor:not-allowed}
+.verde{background:#22c55e;color:#fff}
+.vermelho{background:#ef4444;color:#fff}
+</style>
+</head>
+<body>
+<div id="mapa"></div>
+<div class="controles">
+  <h1>VoltaJunto - Santa Inês</h1>
+  <div id="status">Clique em "ESTOU TRABALHANDO"</div>
+  <button class="verde" onclick="iniciar()" id="btnIniciar">✅ ESTOU TRABALHANDO</button>
+  <button class="vermelho" onclick="parar()" id="btnParar" disabled>🛑 PARAR TRABALHO</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let watchId = null;
+let mapa = null;
+let marcador = null;
+const statusDiv = document.getElementById('status');
+
+mapa = L.map('mapa').setView([-13.2905, -39.8177], 15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+
+function atualizarStatus(msg, tipo = '') {
+  statusDiv.className = tipo;
+  statusDiv.innerHTML = msg;
+}
+
+function iniciar(){
+  atualizarStatus('🔄 Ativando GPS...', '');
+  watchId = navigator.geolocation.watchPosition(
+    p => {
+      const lat = p.coords.latitude;
+      const lng = p.coords.longitude;
+      const precisao = Math.round(p.coords.accuracy);
+      atualizarStatus(`
+        <div>🟢 TRABALHANDO</div>
+        <div style="color:#3b82f6;font-weight:bold">Precisão: ${precisao}m</div>
+        <div class="coords">Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}</div>
+      `, 'ok');
+      if(!marcador){
+        marcador = L.marker([lat, lng]).addTo(mapa).bindPopup('Você está aqui').openPopup();
+      } else {
+        marcador.setLatLng([lat, lng]);
+      }
+      mapa.setView([lat, lng], 16);
+    },
+    e => {
+      let msgErro = '❌ ERRO: ';
+      if(e.code === 1) msgErro += 'Permissão negada';
+      if(e.code === 2) msgErro += 'GPS indisponível';
+      if(e.code === 3) msgErro += 'Timeout';
+      atualizarStatus(msgErro, 'erro');
+    },
+    {enableHighAccuracy:true,timeout:10000,maximumAge:0}
+  );
+  document.getElementById('btnIniciar').disabled=true;
+  document.getElementById('btnParar').disabled=false;
+}
+
+function parar(){
+  if(watchId) navigator.geolocation.clearWatch(watchId);
+  atualizarStatus('⏹️ Trabalho finalizado', '');
+  document.getElementById('btnIniciar').disabled=false;
+  document.getElementById('btnParar').disabled=true;
+}
+</script>
+</body>
+</html>
