@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Zap Moto - Santa Inês</title>
+    <title>Zap Moto - Mototáxi Santa Inês</title>
     <meta name="theme-color" content="#25D366">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Zap Moto">
@@ -14,79 +14,156 @@
         #map { height: 100vh; width: 100vw; }
         .header { position: fixed; top: 0; left: 0; right: 0; background: #25D366; color: white; text-align: center; padding: 12px; font-weight: 900; font-size: 20px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
         .header span { font-size: 12px; font-weight: 400; display: block; }
-        .painel { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
-        .btn { padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: all 0.2s; text-transform: uppercase; }
+        .tarifa { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #FF9500; color: #000; padding: 10px 20px; border-radius: 25px; font-size: 16px; font-weight: 900; z-index: 1000; box-shadow: 0 4px 15px rgba(255,149,0,0.5); }
+        .painel { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; width: 90%; max-width: 400px; }
+        .btn { padding: 16px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: all 0.2s; text-transform: uppercase; }
         .btn:active { transform: scale(0.95); }
-        .btn-trabalho { background: #25D366; color: white; font-size: 18px; }
+        .btn-trabalho { background: #25D366; color: white; font-size: 17px; }
         .btn-trabalho.ativo { background: #FF3B30; }
-        .btn-sos { background: #FF3B30; color: white; animation: pulse 2s infinite; }
-        .btn-ponto { background: #007AFF; color: white; }
+        .btn-corrida { background: #007AFF; color: white; font-size: 17px; display: none; }
+        .btn-corrida.chamando { display: block; animation: pulse-blue 1.5s infinite; }
+        .btn-sos { background: #FF3B30; color: white; }
+        .btn-ponto { background: #5856D6; color: white; }
         .btn-grupo { background: #FF9500; color: white; }
         @keyframes pulse { 0% { box-shadow: 0 0 rgba(255, 59, 48, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
-        .status { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #25D366; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 1000; border: 1px solid #25D366; }
+        @keyframes pulse-blue { 0% { box-shadow: 0 0 rgba(0, 122, 255, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 122, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0); } }
+        .status { position: fixed; top: 120px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #25D366; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 1000; border: 1px solid #25D366; }
         .status.erro { color: #FF3B30; border-color: #FF3B30; }
         .status.alerta { color: #FF9500; border-color: #FF9500; }
+        .status.info { color: #007AFF; border-color: #007AFF; }
+        .popup-corrida { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1C1C1E; color: white; padding: 25px; border-radius: 20px; z-index: 2000; display: none; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 2px solid #007AFF; }
+        .popup-corrida.ativo { display: block; }
+        .popup-corrida h3 { color: #007AFF; margin-bottom: 10px; font-size: 22px; }
+        .popup-corrida p { margin: 8px 0; font-size: 14px; }
+        .popup-corrida .valor { font-size: 32px; font-weight: 900; color: #FF9500; margin: 15px 0; }
+        .popup-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .popup-btns button { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        .btn-aceitar { background: #25D366; color: white; }
+        .btn-recusar { background: #FF3B30; color: white; }
     </style>
 </head>
 <body>
-    <div class="header">ZAP MOTO<span>Santa Inês - BA</span></div>
+    <div class="header">ZAP MOTO<span>Mototáxi Santa Inês - BA</span></div>
+    <div class="tarifa">💰 VALOR: R$ 5,00</div>
     <div class="status" id="status">Aguardando...</div>
     <div id="map"></div>
+    
+    <div class="popup-corrida" id="popupCorrida">
+        <h3>📲 NOVA CORRIDA!</h3>
+        <p><strong>Passageiro:</strong> <span id="nomePassageiro">Maria Silva</span></p>
+        <p><strong>Local:</strong> <span id="localPassageiro">Praça Central</span></p>
+        <p><strong>Destino:</strong> <span id="destinoPassageiro">Bairro São José</span></p>
+        <div class="valor">R$ 5,00</div>
+        <div class="popup-btns">
+            <button class="btn-aceitar" id="btnAceitar">✅ ACEITAR</button>
+            <button class="btn-recusar" id="btnRecusar">❌ RECUSAR</button>
+        </div>
+    </div>
+
     <div class="painel">
-        <button class="btn btn-trabalho" id="btnTrabalho">🛵 ESTOU TRABALHANDO</button>
+        <button class="btn btn-trabalho" id="btnTrabalho">🛵 INICIAR O CORRE</button>
+        <button class="btn btn-corrida" id="btnCorrida">📲 CORRIDA SOLICITADA!</button>
         <button class="btn btn-sos" id="btnSOS">🚨 SOS - PRECISO DE AJUDA</button>
-        <button class="btn btn-ponto" id="btnPonto">📍 MARCAR PONTO ATUAL</button>
+        <button class="btn btn-ponto" id="btnPonto">📍 MARCAR PONTO</button>
         <button class="btn btn-grupo" id="btnGrupo">👥 GRUPO: 0 ONLINE</button>
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const SANTA_INES = [-13.2911, -39.8181];
+        const VALOR_FIXO = 5.00;
         let map, marcadorEu, trabalhando = false;
         let watchId = null;
         let pontosMarcados = [];
         let totalOnline = 0;
+        let corridaAtiva = false;
+        
         const statusEl = document.getElementById('status');
         const btnTrabalho = document.getElementById('btnTrabalho');
+        const btnCorrida = document.getElementById('btnCorrida');
         const btnSOS = document.getElementById('btnSOS');
         const btnPonto = document.getElementById('btnPonto');
         const btnGrupo = document.getElementById('btnGrupo');
+        const popupCorrida = document.getElementById('popupCorrida');
+        const btnAceitar = document.getElementById('btnAceitar');
+        const btnRecusar = document.getElementById('btnRecusar');
+        
         map = L.map('map', { center: SANTA_INES, zoom: 15, zoomControl: false });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
         const iconeMoto = L.divIcon({ className: 'marcador-moto', html: '<div style="background:#25D366;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>', iconSize: [20, 20] });
         marcadorEu = L.marker(SANTA_INES, { icon: iconeMoto }).addTo(map);
+        
         function atualizaStatus(msg, tipo = '') { statusEl.textContent = msg; statusEl.className = 'status ' + tipo; }
+        
         btnTrabalho.onclick = () => {
             if (!trabalhando) {
                 trabalhando = true;
-                btnTrabalho.textContent = '⏹️ PARAR TRABALHO';
+                btnTrabalho.textContent = '⏹ PARAR O CORRE';
                 btnTrabalho.classList.add('ativo');
                 atualizaStatus('Iniciando GPS...', 'alerta');
                 iniciarGPS();
                 totalOnline++;
                 atualizaGrupo();
+                setTimeout(() => { if(trabalhando) simularChamada(); }, 5000);
             } else {
                 trabalhando = false;
-                btnTrabalho.textContent = '🛵 ESTOU TRABALHANDO';
+                btnTrabalho.textContent = '🛵 INICIAR O CORRE';
                 btnTrabalho.classList.remove('ativo');
                 pararGPS();
-                atualizaStatus('Trabalho finalizado');
+                atualizaStatus('Corre finalizado');
                 totalOnline = Math.max(0, totalOnline - 1);
                 atualizaGrupo();
+                btnCorrida.style.display = 'none';
             }
         };
+        
+        function simularChamada() {
+            if (!trabalhando || corridaAtiva) return;
+            btnCorrida.classList.add('chamando');
+            btnCorrida.style.display = 'block';
+            atualizaStatus('📲 NOVA CORRIDA SOLICITADA!', 'info');
+            navigator.vibrate && navigator.vibrate([300, 100, 300]);
+        }
+        
+        btnCorrida.onclick = () => {
+            popupCorrida.classList.add('ativo');
+        };
+        
+        btnAceitar.onclick = () => {
+            corridaAtiva = true;
+            popupCorrida.classList.remove('ativo');
+            btnCorrida.classList.remove('chamando');
+            btnCorrida.style.display = 'none';
+            atualizaStatus('✅ CORRIDA ACEITA - INDO BUSCAR PASSAGEIRO', 'alerta');
+            navigator.vibrate && navigator.vibrate(200);
+            const iconePassageiro = L.divIcon({ html: '<div style="background:#007AFF;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 0 15px rgba(0,122,255,0.8);"></div>', iconSize: [18, 18] });
+            L.marker([-13.2920, -39.8190], { icon: iconePassageiro }).addTo(map).bindPopup('📍 Passageiro aqui<br>Valor: R$ 5,00').openPopup();
+        };
+        
+        btnRecusar.onclick = () => {
+            popupCorrida.classList.remove('ativo');
+            btnCorrida.classList.remove('chamando');
+            btnCorrida.style.display = 'none';
+            atualizaStatus('Corrida recusada', 'alerta');
+            corridaAtiva = false;
+        };
+        
         btnSOS.onclick = () => {
-            if (!trabalhando) { alert('⚠️ Ative "ESTOU TRABALHANDO" primeiro!'); return; }
+            if (!trabalhando) { alert('⚠ Ative "INICIAR O CORRE" primeiro!'); return; }
             atualizaStatus('🚨 SOS ENVIADO! GRUPO NOTIFICADO', 'erro');
             navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 200]);
             marcadorEu.setIcon(L.divIcon({ className: 'marcador-moto', html: '<div style="background:#FF3B30;width:25px;height:25px;border-radius:50%;border:3px solid white;box-shadow:0 0 20px rgba(255,59,48,0.8);animation:pulse 1s infinite;"></div>', iconSize: [25, 25] }));
-            setTimeout(() => { atualizaStatus('GPS ATIVO - SOS ATIVO', 'alerta'); }, 3000);
+            setTimeout(() => { 
+                atualizaStatus('GPS ATIVO - SOS ATIVO', 'alerta'); 
+                marcadorEu.setIcon(iconeMoto);
+            }, 5000);
         };
+        
         btnPonto.onclick = () => {
-            if (!trabalhando) { alert('⚠️ Ative "ESTOU TRABALHANDO" primeiro!'); return; }
+            if (!trabalhando) { alert('⚠ Ative "INICIAR O CORRE" primeiro!'); return; }
             navigator.geolocation.getCurrentPosition((pos) => {
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
-                const iconePonto = L.divIcon({ className: 'ponto-marcado', html: '<div style="background:#007AFF;width:15px;height:15px;border-radius:50%;border:2px solid white;"></div>', iconSize: [15, 15] });
+                const iconePonto = L.divIcon({ className: 'ponto-marcado', html: '<div style="background:#5856D6;width:15px;height:15px;border-radius:50%;border:2px solid white;"></div>', iconSize: [15, 15] });
                 const ponto = L.marker([lat, lng], { icon: iconePonto }).addTo(map);
                 ponto.bindPopup(`📍 Ponto salvo<br>${lat.toFixed(5)}, ${lng.toFixed(5)}<br>${new Date().toLocaleTimeString()}`);
                 pontosMarcados.push(ponto);
@@ -94,11 +171,13 @@
                 navigator.vibrate && navigator.vibrate(100);
             });
         };
+        
         function atualizaGrupo() { btnGrupo.textContent = `👥 GRUPO: ${totalOnline} ONLINE`; }
         btnGrupo.onclick = () => {
             if (totalOnline === 0) { alert('Ninguém online ainda. Chama a galera no zap!'); } 
             else { alert(`👥 ${totalOnline} motoqueiro(s) online\n[Versão teste - em breve mostra todos no mapa]`); }
         };
+        
         function iniciarGPS() {
             if (!navigator.geolocation) { atualizaStatus('GPS não suportado', 'erro'); return; }
             watchId = navigator.geolocation.watchPosition(
@@ -107,15 +186,16 @@
                     const lng = pos.coords.longitude;
                     marcadorEu.setLatLng([lat, lng]);
                     map.setView([lat, lng], 16);
-                    atualizaStatus(`GPS ATIVO - ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                    atualizaStatus(`GPS ATIVO - Valor: R$ ${VALOR_FIXO.toFixed(2)}`);
                 },
                 (err) => { atualizaStatus('ERRO GPS: Permita localização', 'erro'); console.error(err); },
                 { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
             );
         }
         function pararGPS() { if (watchId) navigator.geolocation.clearWatch(watchId); watchId = null; }
-        atualizaStatus('Zap Moto pronto! Clique em TRABALHANDO');
+        atualizaStatus('Zap Moto Mototáxi pronto! Tarifa: R$ 5,00');
         atualizaGrupo();
     </script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
 </body>
-</html>
+</htm
